@@ -66,10 +66,13 @@ func main() {
 	{
 		// POST /checkouts
 		checkoutRoutes.POST("", checkoutHandler.CheckoutBook)
+
+		// PUT /checkouts/5/return
+		checkoutRoutes.PUT("/:id/return", checkoutHandler.ReturnBook)
 	}
 
-	log.Println("Starting server on :8080")
-	if err := r.Run(":8080"); err != nil {
+	log.Println("Starting server on :8081")
+	if err := r.Run(":8081"); err != nil {
 		log.Fatalf("Failed to run server: %v", err)
 	}
 }

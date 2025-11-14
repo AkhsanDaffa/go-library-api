@@ -85,3 +85,14 @@ func (r *CheckoutRepository) GetCheckoutByID(id int) (models.Checkout, error) {
 	}
 	return checkout, nil
 }
+
+func (r *CheckoutRepository) UpdateReturnDate(checkoutID int) error {
+	query := `
+		UPDATE checkouts 
+		SET return_date = NOW()
+		WHERE id = $1 AND return_date IS NULL
+	`
+
+	_, err := r.DB.Exec(query, checkoutID)
+	return err
+}
