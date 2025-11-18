@@ -16,24 +16,26 @@ func NewUserHandler(repo *repository.UserRepository) *UserHandler {
 	return &UserHandler{Repo: repo}
 }
 
-func (h *UserHandler) CreateUser(c *gin.Context) {
-	var req struct {
-		Username string `json:"username"`
-		Email    string `json:"email"`
-	}
+// Kita ubah karena menggunakan AuthHandler
 
-	if err := c.BindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Input JSON tidak valid"})
-		return
-	}
+// func (h *UserHandler) CreateUser(c *gin.Context) {
+// 	var req struct {
+// 		Username string `json:"username"`
+// 		Email    string `json:"email"`
+// 	}
 
-	user, err := h.Repo.CreateUser(req.Username, req.Email)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membuat user"})
-		return
-	}
-	c.JSON(http.StatusCreated, user)
-}
+// 	if err := c.BindJSON(&req); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Input JSON tidak valid"})
+// 		return
+// 	}
+
+// 	user, err := h.Repo.CreateUser(req.Username, req.Email)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membuat user"})
+// 		return
+// 	}
+// 	c.JSON(http.StatusCreated, user)
+// }
 
 func (h *UserHandler) GetAllUsers(c *gin.Context) {
 	users, err := h.Repo.GetAllUsers()

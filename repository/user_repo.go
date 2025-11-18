@@ -13,16 +13,16 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 	return &UserRepository{DB: db}
 }
 
-func (r *UserRepository) CreateUser(username string, email string) (models.User, error) {
+func (r *UserRepository) CreateUser(username string, email string, passwordHash string) (models.User, error) {
 	var user models.User
 
 	query := `
-	INSERT INTO users (username, email)
-	VALUES ($1, $2)
+	INSERT INTO users (username, email, password)
+	VALUES ($1, $2, $3)
 	RETURNING id, username, email, created_at
 	`
 
-	err := r.DB.QueryRow(query, username, email).Scan(
+	err := r.DB.QueryRow(query, username, email, passwordHash).Scan(
 		&user.ID,
 		&user.Username,
 		&user.Email,
@@ -33,6 +33,32 @@ func (r *UserRepository) CreateUser(username string, email string) (models.User,
 		return models.User{}, err
 	}
 
+	return user, nil
+}
+
+func (r *UserRepository) GetUserByEmail(email string) (models.User, error) {
+	var user models.User
+
+	query := `
+	SELECT id, username, email, created_at, password
+	FROM users
+	WHERE email = $1
+	`
+
+	err := r.DB.QueryRow(query, email).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.CreatedAt,
+		&user.Password,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return models.User{}, nil
+		}
+		return models.User{}, err
+	}
 	return user, nil
 }
 

@@ -37,18 +37,29 @@ func main() {
 	bookHandler := handler.NewBookHandler(bookRepo)
 	checkoutHandler := handler.NewCheckoutHandler(checkoutRepo, bookRepo)
 
+	authHandler := handler.NewAuthHandler(userRepo)
+
 	r := gin.Default()
 
 	userRoutes := r.Group("/users")
 	{
 		// POST /users
-		userRoutes.POST("", userHandler.CreateUser)
+		// userRoutes.POST("", userHandler.CreateUser)
 
 		// GET /users
 		userRoutes.GET("", userHandler.GetAllUsers)
 
 		// GET /users/:id
 		userRoutes.GET("/:id", userHandler.GetUserByID)
+	}
+
+	authRoutes := r.Group("/auth")
+	{
+		// POST /auth/register
+		authRoutes.POST("/register", authHandler.Register)
+
+		// POST /auth/login
+		authRoutes.POST("/login", authHandler.Login)
 	}
 
 	bookRoutes := r.Group("/books")
