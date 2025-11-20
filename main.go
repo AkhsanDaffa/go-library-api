@@ -9,6 +9,7 @@ import (
 
 	"go-library-api/config"
 	"go-library-api/handler"
+	"go-library-api/middleware"
 	"go-library-api/repository"
 )
 
@@ -35,7 +36,7 @@ func main() {
 
 	userHandler := handler.NewUserHandler(userRepo)
 	bookHandler := handler.NewBookHandler(bookRepo)
-	checkoutHandler := handler.NewCheckoutHandler(checkoutRepo, bookRepo)
+	checkoutHandler := handler.NewCheckoutHandler(checkoutRepo, bookRepo, db)
 
 	authHandler := handler.NewAuthHandler(userRepo)
 
@@ -73,7 +74,7 @@ func main() {
 		bookRoutes.GET("/:id", bookHandler.GetBookByID)
 	}
 
-	checkoutRoutes := r.Group("/checkouts")
+	checkoutRoutes := r.Group("/checkouts").Use(middleware.AuthMiddleware())
 	{
 		// POST /checkouts
 		checkoutRoutes.POST("", checkoutHandler.CheckoutBook)

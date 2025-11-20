@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -19,11 +20,10 @@ func NewAuthHandler(userRepo *repository.UserRepository) *AuthHandler {
 	return &AuthHandler{UserRepo: userRepo}
 }
 
-// Struct untuk input JSON
 type RegisterInput struct {
 	Username string `json:"username" binding:"required,min=3"`
 	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=6"`
+	Password string `json:"password" binding:"required,min=8"`
 }
 
 type LoginInput struct {
@@ -36,7 +36,9 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	var input RegisterInput
 
 	if err := c.BindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		errorMessages := formatValidationError(err)
+
+		c.JSON(http.StatusBadRequest, gin.H{"error": errorMessages})
 		return
 	}
 
@@ -62,7 +64,9 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	// 1. Validasi Input
 	if err := c.BindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		errorMessages := formatValidationError(err)
+
+		c.JSON(http.StatusBadRequest, gin.H{"error": errorMessages})
 		return
 	}
 
@@ -88,6 +92,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	// 5. Generate JWT Token
 	jwtSecret := os.Getenv("JWT_SECRET")
+
 	if jwtSecret == "" {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "JWT secret not set"})
 		return
@@ -110,4 +115,28 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"token": tokenString,
 	})
+}
+
+func formatValidationError(err error) []string {
+	var errors []string
+
+	if validationErrors, ok := err.(validator.ValidationErrors); ok {
+		for _, e := range validationErrors {
+			switch e.Tag() {
+			case "required":
+				errors = append(errors, e.Field()+" is required")
+			case "min":
+				errors = append(errors, e.Field()+" must be at least "+e.Param()+" characters long")
+			case "email":
+				errors = append(errors, e.Field()+" must be a valid email address")
+			default:
+				errors = append(errors, e.Field()+" is not valid")
+			}
+		}
+	}
+	if len(errors) == 0 {
+		errors = append(errors, err.Error())
+	}
+
+	return errors
 }

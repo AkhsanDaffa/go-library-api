@@ -37,6 +37,30 @@ func (r *CheckoutRepository) CreateCheckout(UserID int, BookID int) (models.Chec
 	return checkout, nil
 }
 
+func (r *CheckoutRepository) CreateCheckoutWithTx(tx *sql.Tx, UserID int, BookID int) (models.Checkout, error) {
+	var checkout models.Checkout
+
+	query := `
+	INSERT INTO checkouts (user_id, book_id)
+	VALUES ($1, $2)
+	RETURNING id, checkout_date, return_date, user_id, book_id
+	`
+
+	err := tx.QueryRow(query, UserID, BookID).Scan(
+		&checkout.ID,
+		&checkout.CheckoutDate,
+		&checkout.ReturnDate,
+		&checkout.UserID,
+		&checkout.BookID,
+	)
+
+	if err != nil {
+		return models.Checkout{}, err
+	}
+
+	return checkout, nil
+}
+
 func (r *CheckoutRepository) GetAllCheckouts() ([]models.Checkout, error) {
 	var checkouts []models.Checkout
 

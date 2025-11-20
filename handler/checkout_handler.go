@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"database/sql"
 	"go-library-api/repository"
 	"log"
 	"net/http"
@@ -12,18 +13,19 @@ import (
 type CheckoutHandler struct {
 	CheckoutRepo *repository.CheckoutRepository
 	BookRepo     *repository.BookRepository
+	DB           *sql.DB
 }
 
-func NewCheckoutHandler(checkoutRepo *repository.CheckoutRepository, bookRepo *repository.BookRepository) *CheckoutHandler {
+func NewCheckoutHandler(checkoutRepo *repository.CheckoutRepository, bookRepo *repository.BookRepository, db *sql.DB) *CheckoutHandler {
 	return &CheckoutHandler{
 		CheckoutRepo: checkoutRepo,
 		BookRepo:     bookRepo,
+		DB:           db,
 	}
 }
 
 func (h *CheckoutHandler) CheckoutBook(c *gin.Context) {
 	var req struct {
-		UserID int `json:"user_id"`
 		BookID int `json:"book_id"`
 	}
 
@@ -32,7 +34,12 @@ func (h *CheckoutHandler) CheckoutBook(c *gin.Context) {
 		return
 	}
 
-	// Check Book Availability
+	userID := c.GetInt("userID")
+
+	if userID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
 
 	book, err := h.BookRepo.GetBookByID(req.BookID)
 	if err != nil {
@@ -50,8 +57,22 @@ func (h *CheckoutHandler) CheckoutBook(c *gin.Context) {
 		return
 	}
 
+	tx, err := h.DB.Begin()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
+
+	defer tx.Rollback()
+
 	// Create Checkout Record
-	checkout, err := h.CheckoutRepo.CreateCheckout(req.UserID, req.BookID)
+	checkout, err := h.CheckoutRepo.CreateCheckout(userID, req.BookID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to checkout book"})
+		return
+	}
+
+	checkout, err = h.CheckoutRepo.CreateCheckoutWithTx(tx, userID, req.BookID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to checkout book"})
 		return
@@ -61,6 +82,17 @@ func (h *CheckoutHandler) CheckoutBook(c *gin.Context) {
 	if err := h.BookRepo.UpdateBookAvailability(req.BookID, false); err != nil {
 		log.Printf("Failed to update status book %d: %v", req.BookID, err)
 	}
+
+	if err := h.BookRepo.UpdateBookAvailabilityWithTx(tx, req.BookID, false); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update book status"})
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
+		return
+	}
+
 	c.JSON(http.StatusCreated, checkout)
 }
 

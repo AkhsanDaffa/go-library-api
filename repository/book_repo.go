@@ -93,3 +93,11 @@ func (r *BookRepository) UpdateBookAvailability(bookID int, isAvailable bool) er
 	_, err := r.DB.Exec(query, isAvailable, bookID)
 	return err
 }
+
+func (r *BookRepository) UpdateBookAvailabilityWithTx(tx *sql.Tx, bookID int, isAvailable bool) error {
+	query := `
+	UPDATE books SET is_available = $1 WHERE id = $2
+	`
+	_, err := tx.Exec(query, isAvailable, bookID)
+	return err
+}
