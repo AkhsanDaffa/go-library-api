@@ -31,7 +31,16 @@ type LoginInput struct {
 	Password string `json:"password" binding:"required"`
 }
 
-// POST /register
+// @Summary      Register User
+// @Description  Mendaftarkan pengguna baru dengan username, email, dan password
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        request body handler.RegisterInput true "Payload Body (JSON)"
+// @Success      201  {object}  models.User
+// @Failure      400  {object}  map[string]any
+// @Failure      409  {object}  map[string]any
+// @Router       /auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
 	var input RegisterInput
 
@@ -58,7 +67,16 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"user": user})
 }
 
-// POST /login
+// @Summary      Login User
+// @Description  Menukar email & password dengan Token JWT untuk akses API
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        request body handler.LoginInput true "Payload Body (JSON)"
+// @Success      200  {object}  map[string]string
+// @Failure      400  {object}  map[string]any
+// @Failure      401  {object}  map[string]any
+// @Router       /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var input LoginInput
 

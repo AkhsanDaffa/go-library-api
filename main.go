@@ -11,7 +11,30 @@ import (
 	"go-library-api/handler"
 	"go-library-api/middleware"
 	"go-library-api/repository"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
+	_ "go-library-api/docs"
 )
+
+// @title Library API
+// @version 1.0
+// @description Aplikasi Manajemen Perpustakaan dengan Go dan Gin
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name Support Team
+// @contact.email support@swagger.io
+
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host localhost:8081
+// @BasePath /
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 
 func main() {
 	log.Println("Memulai Aplikasi Perpustakaan")
@@ -82,6 +105,8 @@ func main() {
 		// PUT /checkouts/5/return
 		checkoutRoutes.PUT("/:id/return", checkoutHandler.ReturnBook)
 	}
+
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	log.Println("Starting server on :8081")
 	if err := r.Run(":8081"); err != nil {
