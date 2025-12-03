@@ -12,11 +12,19 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// type AuthHandler struct {
+// 	UserRepo *repository.UserRepository
+// }
+
+// func NewAuthHandler(userRepo *repository.UserRepository) *AuthHandler {
+// 	return &AuthHandler{UserRepo: userRepo}
+// }
+
 type AuthHandler struct {
-	UserRepo *repository.UserRepository
+	UserRepo repository.UserRepositoryInterface
 }
 
-func NewAuthHandler(userRepo *repository.UserRepository) *AuthHandler {
+func NewAuthHandler(userRepo repository.UserRepositoryInterface) *AuthHandler {
 	return &AuthHandler{UserRepo: userRepo}
 }
 
