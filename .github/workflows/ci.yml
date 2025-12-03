@@ -1,35 +1,45 @@
-name: Go Test & Build
+name: CI/CD Pipeline
 
 on:
     push:
         branches: ["main"]
-    pull_request:
-        branches: ["main"]
 
 jobs:
-    test-and-build:
-        # Robot akan memakai OS Ubuntu terbaru (gratis dari GitHub)
+    test:
+        name: Run Unit Tests
         runs-on: ubuntu-latest
 
         steps:
-            # 1. Robot mengambil kodingan kita dari repository
             - name: Checkout code
               uses: actions/checkout@v4
 
-            # 2. Robot menginstal Go versi 1.23/1.24
             - name: Set up Go
               uses: actions/setup-go@v4
               with:
                   go-version: "1.24"
 
-            # 3. Robot mendownload library (gin, gorm, dll)
             - name: Install dependencies
               run: go mod download
 
-            # 4. Robot menjalankan Unit Test (sama seperti di laptop kita)
-            - name: Run Unit Tests
+            - name: Run Tests
               run: go test ./... -v
 
-            # 5. Robot mencoba men-build (memastikan tidak ada syntax error parah)
-            - name: Build
-              run: go build -v ./...
+    deploy:
+        name: Deploy to VPS
+        needs: test
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Connect to VPS and Update
+              uses: appleboy/ssh-action@master
+              with:
+                  host: ${{ secrets.VPS_HOST }}
+                  username: ${{ secrets.VPS_USER }}
+                  key: ${{ secrets.VPS_SSH_KEY }}
+                  port: 22
+
+                  script: |
+                      cd go-library-api
+                      git reset --hard HEAD
+                      git pull origin main
+                      docker compose up -d --build
