@@ -1,11 +1,19 @@
 package handler
 
 import (
-	"go-library-api/repository"
+	"context"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
+	"time"
+
+	"go-library-api/config"
+	"go-library-api/models"
+	"go-library-api/repository"
 
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 )
 
 type BookHandler struct {
@@ -36,13 +44,52 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 	c.JSON(http.StatusCreated, book)
 }
 
+// func (h *BookHandler) GetAllBooks(c *gin.Context) {
+// 	books, err := h.Repo.GetAllBooks()
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve books"})
+// 		return
+// 	}
+// 	c.JSON(http.StatusOK, books)
+// }
+
 func (h *BookHandler) GetAllBooks(c *gin.Context) {
+	ctx := context.Background()
+
+	cacheKey := "books:all"
+
+	val, err := config.RedisClient.Get(ctx, cacheKey).Result()
+
+	if err == nil {
+		var books []models.Book
+		err = json.Unmarshal([]byte(val), &books)
+		if err == nil {
+			c.JSON(http.StatusOK, gin.H{
+				"source": "redis",
+				"data":   books,
+			})
+			return
+		}
+	} else if err != redis.Nil {
+		fmt.Println("Redis error:", err)
+	}
+
 	books, err := h.Repo.GetAllBooks()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve books"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, books)
+
+	jsonBytes, err := json.Marshal(books)
+	if err == nil {
+		config.RedisClient.Set(ctx, cacheKey, jsonBytes, 1*time.Minute)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"source": "database",
+		"data":   books,
+	})
+
 }
 
 func (h *BookHandler) GetBookByID(c *gin.Context) {

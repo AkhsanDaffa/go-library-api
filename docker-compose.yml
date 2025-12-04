@@ -26,6 +26,11 @@ services:
     depends_on:
       - db
 
+  redis:
+    image: redis:alpine
+    container_name: library_redis
+    ports:
+      - "6379:6379"
   app:
     build: .
     container_name: library_api_app
@@ -40,9 +45,14 @@ services:
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
 
+      REDIS_ADDR: "redis:6379"
+      REDIS_PASSWORD: ""
+      REDIS_DB: "0"
+
       JWT_SECRET: "ini_adalah_kunci_rahasia_yang_sangat_panjang"
     depends_on:
       - db
+      - redis
 
 volumes:
   postgres_data:

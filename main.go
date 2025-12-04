@@ -63,6 +63,8 @@ func main() {
 
 	authHandler := handler.NewAuthHandler(userRepo)
 
+	config.InitRedis()
+
 	r := gin.Default()
 
 	userRoutes := r.Group("/users")
