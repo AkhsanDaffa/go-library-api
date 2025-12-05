@@ -4,9 +4,9 @@ services:
     container_name: library_db_postgres
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: testing
-      POSTGRES_DB: library_system
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5433:5432"
     volumes:
@@ -39,9 +39,9 @@ services:
     ports:
       - "8081:8081"
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: testing
-      POSTGRES_DB: library_system
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
 
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
@@ -50,7 +50,7 @@ services:
       REDIS_PASSWORD: ""
       REDIS_DB: "0"
 
-      JWT_SECRET: "ini_adalah_kunci_rahasia_yang_sangat_panjang"
+      JWT_SECRET: "${JWT_SECRET}"
     depends_on:
       - db
       - redis
