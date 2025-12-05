@@ -24,24 +24,48 @@ func NewBookHandler(repo *repository.BookRepository) *BookHandler {
 	return &BookHandler{Repo: repo}
 }
 
+// func (h *BookHandler) CreateBook(c *gin.Context) {
+// 	var req struct {
+// 		Title  string `json:"title"`
+// 		Author string `json:"author"`
+// 	}
+
+// 	if err := c.BindJSON(&req); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+// 		return
+// 	}
+
+// 	book, err := h.Repo.CreateBook(req.Title, req.Author, true)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create book"})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusCreated, book)
+// }
+
 func (h *BookHandler) CreateBook(c *gin.Context) {
-	var req struct {
-		Title  string `json:"title"`
-		Author string `json:"author"`
-	}
+	var book models.Book
 
-	if err := c.BindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+	if err := c.ShouldBindJSON(&book); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	book, err := h.Repo.CreateBook(req.Title, req.Author, true)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create book"})
+	if err := h.Repo.CreateBook(&book); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, book)
+	ctx := context.Background()
+	cacheKey := "books:all"
+
+	config.RedisClient.Del(ctx, cacheKey)
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Book created successfuly",
+		"data":    book,
+	})
 }
 
 // func (h *BookHandler) GetAllBooks(c *gin.Context) {
@@ -55,7 +79,6 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 
 func (h *BookHandler) GetAllBooks(c *gin.Context) {
 	ctx := context.Background()
-
 	cacheKey := "books:all"
 
 	val, err := config.RedisClient.Get(ctx, cacheKey).Result()

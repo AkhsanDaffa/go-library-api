@@ -13,16 +13,14 @@ func NewBookRepository(db *sql.DB) *BookRepository {
 	return &BookRepository{DB: db}
 }
 
-func (r *BookRepository) CreateBook(title string, author string, is_available bool) (models.Book, error) {
-	var book models.Book
-
+func (r *BookRepository) CreateBook(book *models.Book) error {
 	query := `
 	INSERT INTO books (title, author, is_available)
 	VALUES ($1, $2, $3)
 	RETURNING id, title, author, is_available
 	`
 
-	err := r.DB.QueryRow(query, title, author, is_available).Scan(
+	err := r.DB.QueryRow(query, book.Title, book.Author, book.IsAvailable).Scan(
 		&book.ID,
 		&book.Title,
 		&book.Author,
@@ -30,10 +28,10 @@ func (r *BookRepository) CreateBook(title string, author string, is_available bo
 	)
 
 	if err != nil {
-		return models.Book{}, err
+		return err
 	}
 
-	return book, nil
+	return nil
 }
 
 func (r *BookRepository) GetAllBooks() ([]models.Book, error) {
